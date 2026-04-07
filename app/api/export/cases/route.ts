@@ -11,7 +11,7 @@ export async function GET() {
   const headers = ['ID', 'Title', 'Description', 'Status', 'Priority', 'Resident Name', 'Resident Unit', 'Created At'];
   
   // Format Data Rows
-  const rows = cases.map((c: any) => [
+  const rows: Array<Array<string | number>> = cases.map((c: any) => [
     c.id,
     `"${c.title.replace(/"/g, '""')}"`,
     `"${c.description.replace(/"/g, '""')}"`,
@@ -24,7 +24,7 @@ export async function GET() {
 
   const csvContent = [
     headers.join(','),
-    ...rows.map(row => row.join(','))
+    ...rows.map((row) => row.join(','))
   ].join('\n');
 
   return new NextResponse(csvContent, {

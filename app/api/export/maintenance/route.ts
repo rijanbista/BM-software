@@ -10,7 +10,7 @@ export async function GET() {
   const headers = ['ID', 'Title', 'Description', 'Assigned To', 'Status', 'Scheduled Date', 'Created At'];
   
   // Format Data Rows
-  const rows = schedules.map((item: any) => [
+  const rows: Array<Array<string | number>> = schedules.map((item: any) => [
     item.id,
     `"${item.title.replace(/"/g, '""')}"`,
     `"${item.description.replace(/"/g, '""')}"`,
@@ -22,7 +22,7 @@ export async function GET() {
 
   const csvContent = [
     headers.join(','),
-    ...rows.map(row => row.join(','))
+    ...rows.map((row) => row.join(','))
   ].join('\n');
 
   return new NextResponse(csvContent, {
