@@ -3,6 +3,8 @@ import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import AddCaseForm from '@/components/AddCaseForm';
 import './Cases.css';
 
+export const dynamic = 'force-dynamic';
+
 export default async function CasesPage() {
   const cases = await prisma.case.findMany({
     orderBy: { createdAt: 'desc' },

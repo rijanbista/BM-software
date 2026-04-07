@@ -3,6 +3,8 @@ import { Calendar, Wrench, CheckCircle, Clock } from 'lucide-react';
 import AddMaintenanceForm from '../../components/AddMaintenanceForm';
 import './Maintenance.css';
 
+export const dynamic = 'force-dynamic';
+
 export default async function MaintenancePage() {
   const schedules = await prisma.maintenanceSchedule.findMany({
     orderBy: { scheduledDate: 'asc' },

@@ -3,6 +3,8 @@ import { Users, Search } from 'lucide-react';
 import AddResidentForm from '@/components/AddResidentForm';
 import './Residents.css';
 
+export const dynamic = 'force-dynamic';
+
 // This is a Server Component, so we can fetch directly from Prisma
 export default async function ResidentsPage() {
   const residents = await prisma.resident.findMany({

@@ -3,6 +3,8 @@ import { ClipboardCheck, ShieldCheck, AlertTriangle, AlertCircle } from 'lucide-
 import AddInspectionForm from '@/components/AddInspectionForm';
 import './Inspections.css';
 
+export const dynamic = 'force-dynamic';
+
 export default async function InspectionsPage() {
   const inspections = await prisma.inspection.findMany({
     orderBy: { createdAt: 'desc' },
