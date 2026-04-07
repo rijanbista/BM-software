@@ -1,15 +1,20 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { SignJWT, jwtVerify } from 'jose';
+import { SignJWT } from 'jose';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super-secret-fallback-key-for-npbos');
 
+async function getPrisma() {
+  const { prisma } = await import('@/lib/prisma');
+  return prisma;
+}
+
 export async function login(formData: FormData) {
+  const prisma = await getPrisma();
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
@@ -50,6 +55,7 @@ export async function logout() {
 }
 
 export async function addMaintenance(formData: FormData) {
+  const prisma = await getPrisma();
   const title = formData.get('title') as string;
   const description = formData.get('description') as string;
   const scheduledDateStr = formData.get('scheduledDate') as string;
@@ -69,6 +75,7 @@ export async function addMaintenance(formData: FormData) {
 }
 
 export async function addResident(formData: FormData) {
+  const prisma = await getPrisma();
   const name = formData.get('name') as string;
   const unit = formData.get('unit') as string;
   const email = formData.get('email') as string;
@@ -90,6 +97,7 @@ export async function addResident(formData: FormData) {
 }
 
 export async function addCase(formData: FormData) {
+  const prisma = await getPrisma();
   const title = formData.get('title') as string;
   const description = formData.get('description') as string;
   const priority = formData.get('priority') as string;
@@ -112,6 +120,7 @@ export async function addCase(formData: FormData) {
 }
 
 export async function addInspection(formData: FormData) {
+  const prisma = await getPrisma();
   const area = formData.get('area') as string;
   const condition = formData.get('condition') as string;
   const notes = formData.get('notes') as string;
