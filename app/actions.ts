@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { SignJWT } from 'jose';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
+import { requireTenantContext } from '@/lib/auth';
 
 async function getPrisma() {
   const { prisma } = await import('@/lib/prisma');
@@ -36,7 +37,22 @@ export async function login(formData: FormData) {
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) return { error: 'Invalid credentials' };
 
-    const token = await new SignJWT({ sub: user.id, name: user.name, role: user.role })
+    const membership = await prisma.membership.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    if (!membership) {
+      return { error: 'No tenant membership found. Run db:setup-admin first.' };
+    }
+
+    const token = await new SignJWT({
+      sub: user.id,
+      name: user.name,
+      role: user.role,
+      orgId: membership.organizationId,
+      buildingId: membership.buildingId ?? undefined,
+    })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('24h')
       .sign(jwtSecret);
@@ -65,6 +81,7 @@ export async function logout() {
 
 export async function addMaintenance(formData: FormData) {
   const prisma = await getPrisma();
+  const tenant = await requireTenantContext();
   const title = formData.get('title') as string;
   const description = formData.get('description') as string;
   const scheduledDateStr = formData.get('scheduledDate') as string;
@@ -76,6 +93,8 @@ export async function addMaintenance(formData: FormData) {
       title,
       description,
       scheduledDate: new Date(scheduledDateStr),
+      organizationId: tenant.orgId,
+      buildingId: tenant.buildingId,
     },
   });
 
@@ -85,6 +104,7 @@ export async function addMaintenance(formData: FormData) {
 
 export async function addResident(formData: FormData) {
   const prisma = await getPrisma();
+  const tenant = await requireTenantContext();
   const name = formData.get('name') as string;
   const unit = formData.get('unit') as string;
   const email = formData.get('email') as string;
@@ -98,6 +118,8 @@ export async function addResident(formData: FormData) {
       unit,
       email,
       phone,
+      organizationId: tenant.orgId,
+      buildingId: tenant.buildingId,
     },
   });
 
@@ -107,6 +129,7 @@ export async function addResident(formData: FormData) {
 
 export async function addCase(formData: FormData) {
   const prisma = await getPrisma();
+  const tenant = await requireTenantContext();
   const title = formData.get('title') as string;
   const description = formData.get('description') as string;
   const priority = formData.get('priority') as string;
@@ -121,6 +144,8 @@ export async function addCase(formData: FormData) {
       priority,
       status: 'OPEN',
       residentId: residentId ? residentId : null,
+      organizationId: tenant.orgId,
+      buildingId: tenant.buildingId,
     },
   });
 
@@ -130,6 +155,7 @@ export async function addCase(formData: FormData) {
 
 export async function addInspection(formData: FormData) {
   const prisma = await getPrisma();
+  const tenant = await requireTenantContext();
   const area = formData.get('area') as string;
   const condition = formData.get('condition') as string;
   const notes = formData.get('notes') as string;
@@ -142,6 +168,8 @@ export async function addInspection(formData: FormData) {
       condition,
       notes,
       inspector: 'System Admin', // Using dummy user for now
+      organizationId: tenant.orgId,
+      buildingId: tenant.buildingId,
     },
   });
 

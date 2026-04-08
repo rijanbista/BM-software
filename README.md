@@ -23,6 +23,12 @@ For production deployments with migrations:
 npm run db:deploy
 ```
 
+Bootstrap tenant context after first login (optional, SUPERADMIN only):
+
+```bash
+curl -X POST https://your-domain.vercel.app/api/bootstrap/tenant
+```
+
 Then run the development server:
 
 ```bash
@@ -66,5 +72,16 @@ After setting env vars, redeploy.
 Health check endpoint:
 
 - `GET /api/health`
+
+## SaaS Foundation (Phase 1)
+
+The project now includes tenant-ready core entities:
+
+- `Organization`
+- `Building`
+- `Membership`
+- `AuditLog`
+
+Operational records (`Resident`, `Case`, `MaintenanceSchedule`, `Inspection`, `ShiftLog`) include tenant scope fields (`organizationId`, `buildingId`) for phased RBAC rollout.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

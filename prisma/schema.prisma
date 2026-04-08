@@ -9,37 +9,119 @@ datasource db {
   provider = "postgresql"
 }
 
+model Organization {
+  id          String                @id @default(cuid())
+  name        String
+  slug        String                @unique
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  buildings   Building[]
+  memberships Membership[]
+  residents   Resident[]
+  cases       Case[]
+  shiftLogs   ShiftLog[]
+  maintenance MaintenanceSchedule[]
+  inspections Inspection[]
+  auditLogs   AuditLog[]
+}
+
+model Building {
+  id             String                @id @default(cuid())
+  name           String
+  code           String
+  address        String?
+  organizationId String
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  residents      Resident[]
+  cases          Case[]
+  shiftLogs      ShiftLog[]
+  maintenance    MaintenanceSchedule[]
+  inspections    Inspection[]
+  memberships    Membership[]
+
+  @@unique([organizationId, code])
+}
+
+model Membership {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  buildingId     String?
+  role           String       @default("MANAGER")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  building       Building?    @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, organizationId, buildingId])
+  @@index([organizationId])
+}
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  actorUserId    String?
+  organizationId String?
+  action         String
+  resourceType   String
+  resourceId     String?
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  actorUser      User?        @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+}
+
 model Resident {
-  id        String    @id @default(cuid())
-  name      String
-  unit      String
-  email     String    @unique
-  phone     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  cases     Case[]
-  messages  Message[]
+  id             String        @id @default(cuid())
+  name           String
+  unit           String
+  email          String        @unique
+  phone          String?
+  organizationId String?
+  buildingId     String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  building       Building?     @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  cases          Case[]
+  messages       Message[]
+
+  @@index([organizationId, buildingId])
 }
 
 model Case {
-  id          String    @id @default(cuid())
-  title       String
-  description String
-  status      String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED
-  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id             String        @id @default(cuid())
+  title          String
+  description    String
+  status         String        @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED
+  priority       String        @default("MEDIUM") // LOW, MEDIUM, HIGH
+  organizationId String?
+  buildingId     String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  building       Building?     @relation(fields: [buildingId], references: [id], onDelete: SetNull)
 
-  residentId  String?
-  resident    Resident? @relation(fields: [residentId], references: [id])
+  residentId String?
+  resident   Resident? @relation(fields: [residentId], references: [id])
+
+  @@index([organizationId, buildingId, status])
 }
 
 model ShiftLog {
-  id        String   @id @default(cuid())
-  author    String
-  content   String
-  shiftType String   @default("DAY") // DAY, NIGHT
-  createdAt DateTime @default(now())
+  id             String        @id @default(cuid())
+  author         String
+  content        String
+  shiftType      String        @default("DAY") // DAY, NIGHT
+  organizationId String?
+  buildingId     String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  building       Building?     @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
 }
 
 model Message {
@@ -54,31 +136,45 @@ model Message {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      String   @default("MANAGER")
-  createdAt DateTime @default(now())
+  id          String       @id @default(cuid())
+  name        String
+  email       String       @unique
+  password    String
+  role        String       @default("MANAGER")
+  createdAt   DateTime     @default(now())
+  memberships Membership[]
+  auditLogs   AuditLog[]
 }
 
 model MaintenanceSchedule {
-  id            String   @id @default(cuid())
-  title         String
-  description   String
-  scheduledDate DateTime
-  status        String   @default("PENDING")
-  assignedTo    String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String        @id @default(cuid())
+  title          String
+  description    String
+  scheduledDate  DateTime
+  status         String        @default("PENDING")
+  assignedTo     String?
+  organizationId String?
+  buildingId     String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  building       Building?     @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId, buildingId, scheduledDate])
 }
 
 model Inspection {
-  id          String   @id @default(cuid())
-  area        String
-  condition   String   // GOOD, FAIR, POOR
-  notes       String?
-  inspector   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String        @id @default(cuid())
+  area           String
+  condition      String        // GOOD, FAIR, POOR
+  notes          String?
+  inspector      String
+  organizationId String?
+  buildingId     String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  building       Building?     @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId, buildingId, createdAt])
 }
