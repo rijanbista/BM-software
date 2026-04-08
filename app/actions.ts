@@ -14,38 +14,40 @@ async function getPrisma() {
 }
 
 export async function login(formData: FormData) {
-  const prisma = await getPrisma();
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
   if (!email || !password) return { error: 'Please provide email and password' };
+  try {
+    const prisma = await getPrisma();
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-  });
+    if (!user) return { error: 'No user found for this email. Run db:setup-admin first.' };
 
-  if (!user) return { error: 'Invalid credentials' };
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) return { error: 'Invalid credentials' };
 
-  const passwordMatch = await bcrypt.compare(password, user.password);
-  if (!passwordMatch) return { error: 'Invalid credentials' };
+    const token = await new SignJWT({ sub: user.id, name: user.name, role: user.role })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setExpirationTime('24h')
+      .sign(JWT_SECRET);
 
-  // Create JWT
-  const token = await new SignJWT({ sub: user.id, name: user.name, role: user.role })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('24h')
-    .sign(JWT_SECRET);
+    const cookieStore = await cookies();
+    cookieStore.set('npbos_session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24,
+      path: '/',
+    });
 
-  // Set cookie
-  const cookieStore = await cookies();
-  cookieStore.set('npbos_session', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24, // 24 hours
-    path: '/',
-  });
-
-  redirect('/');
+    redirect('/');
+  } catch (error) {
+    console.error('Login failed:', error);
+    return { error: 'Authentication service unavailable. Verify DATABASE_URL and run Prisma setup.' };
+  }
 }
 
 export async function logout() {
