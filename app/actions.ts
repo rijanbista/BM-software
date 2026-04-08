@@ -6,11 +6,17 @@ import { SignJWT } from 'jose';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super-secret-fallback-key-for-npbos');
-
 async function getPrisma() {
   const { prisma } = await import('@/lib/prisma');
   return prisma;
+}
+
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET is not set');
+  }
+  return new TextEncoder().encode(secret);
 }
 
 export async function login(formData: FormData) {
@@ -19,6 +25,7 @@ export async function login(formData: FormData) {
 
   if (!email || !password) return { error: 'Please provide email and password' };
   try {
+    const jwtSecret = getJwtSecret();
     const prisma = await getPrisma();
     const user = await prisma.user.findUnique({
       where: { email },
@@ -32,7 +39,7 @@ export async function login(formData: FormData) {
     const token = await new SignJWT({ sub: user.id, name: user.name, role: user.role })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('24h')
-      .sign(JWT_SECRET);
+      .sign(jwtSecret);
 
     const cookieStore = await cookies();
     cookieStore.set('npbos_session', token, {

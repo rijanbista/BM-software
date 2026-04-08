@@ -17,6 +17,12 @@ npm run db:push
 npm run db:setup-admin
 ```
 
+For production deployments with migrations:
+
+```bash
+npm run db:deploy
+```
+
 Then run the development server:
 
 ```bash
@@ -56,5 +62,9 @@ Set these environment variables in Vercel Project Settings:
 - `JWT_SECRET`
 
 After setting env vars, redeploy.
+
+Health check endpoint:
+
+- `GET /api/health`
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
