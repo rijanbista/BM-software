@@ -1,5 +1,4 @@
-.dashboard-container {
-  padding: 2rem;
+.dashboard-layout {
   display: flex;
   flex-direction: column;
   gap: 2rem;

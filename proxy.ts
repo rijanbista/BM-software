@@ -15,42 +15,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const isPublicRoute = publicRoutes.includes(path);
-  const token = request.cookies.get('npbos_session')?.value;
-  const jwtSecret = process.env.JWT_SECRET;
-
-  // If no session exists, guard non-public routes.
-  if (!token) {
-    if (!isPublicRoute) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-    return NextResponse.next();
-  }
-
-  // If secret is missing in runtime env, treat session as invalid.
-  if (!jwtSecret) {
-    if (!isPublicRoute) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-    return NextResponse.next();
-  }
-
-  let isAuthenticated = false;
-  try {
-    await jwtVerify(token, new TextEncoder().encode(jwtSecret));
-    isAuthenticated = true;
-  } catch {
-    isAuthenticated = false;
-  }
-
-  if (!isAuthenticated && !isPublicRoute) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  if (isAuthenticated && isPublicRoute) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-
+  // BYPASS AUTHENTICATION FOR NOW
+  // If we ever revert this, it will guard routes again
   return NextResponse.next();
 }
 

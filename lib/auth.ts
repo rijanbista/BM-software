@@ -18,31 +18,22 @@ function getJwtSecret() {
 }
 
 export async function getSessionClaims(): Promise<SessionClaims | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('npbos_session')?.value;
-
-  if (!token) {
-    return null;
-  }
-
-  try {
-    const { payload } = await jwtVerify(token, getJwtSecret());
-    return payload as SessionClaims;
-  } catch {
-    return null;
-  }
+  // BYPASS AUTHENTICATION FOR NOW
+  return {
+    sub: 'mock-user-id',
+    name: 'Admin User',
+    role: 'MANAGER',
+    orgId: undefined,
+    buildingId: undefined,
+  };
 }
 
 export async function requireTenantContext() {
   const session = await getSessionClaims();
 
-  if (!session?.sub) {
-    throw new Error('Not authenticated');
-  }
-
   return {
-    userId: session.sub,
-    orgId: session.orgId ?? null,
-    buildingId: session.buildingId ?? null,
+    userId: session?.sub ?? 'mock-user-id',
+    orgId: session?.orgId ?? null,
+    buildingId: session?.buildingId ?? null,
   };
 }

@@ -6,7 +6,7 @@ import './Dashboard.css';
 
 export default function Dashboard() {
   return (
-    <div className="dashboard-container">
+    <div className="page-container dashboard-layout">
       {/* Hero Section with travel-website vibe */}
       <section className="hero-section">
         <div className="hero-background"></div>
